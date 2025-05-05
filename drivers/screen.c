@@ -1,5 +1,6 @@
 #include "screen.h"
 #include "ports.h"
+#include "../kernel/util.h"
 
 
 // Function declarations
@@ -12,7 +13,7 @@ int get_offset_col(int offset);
 ///////////////////////////////////////////////////////////////////////////
 
 
-void print_at(char* message, int row, int col) {
+void kprint_at(char* message, int row, int col) {
     int offset;
 
     if (row >= 0 && col >= 0) {
@@ -35,8 +36,8 @@ void print_at(char* message, int row, int col) {
 }
 
 
-void print(char* message) {
-    print_at(message, -1, -1);
+void kprint(char* message) {
+    kprint_at(message, -1, -1);
 }
 
 
@@ -70,7 +71,25 @@ int print_char(char character, int row, int col, char attribute_byte) {
         offset += 2;
     }
 
-    // offset = handle_scrolling(offset);
+    if (offset >= MAX_ROWS * MAX_COLS * 2) {
+        int i;
+
+        for (int i = 1; i < MAX_ROWS; i++) {
+            memory_copy(
+                    (char*)(get_screen_offset(i, 0) + VIDEO_ADDRESS),
+                    (char*)(get_screen_offset(i - 1, 0) + VIDEO_ADDRESS),
+                    MAX_COLS * 2
+            );
+        }
+
+        char* last_line = (char *)(get_screen_offset(MAX_ROWS - 1, 0) + VIDEO_ADDRESS);
+        for (int i = 0; i < MAX_COLS * 2; i++) {
+            last_line[i] = 0;
+        }
+
+        offset -= MAX_COLS * 2;
+    }
+
     set_cursor_offset(offset);
     return offset;
 }
