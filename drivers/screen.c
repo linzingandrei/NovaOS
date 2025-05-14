@@ -40,6 +40,25 @@ void kprint(char* message) {
     kprint_at(message, -1, -1);
 }
 
+void kputchar(char c) {
+    static char str[2];
+    str[0] = c;
+    str[1] = '\0';
+    kprint(str);
+}
+
+void kprint_backspace() {
+    int offset = get_cursor_offset() - 2;
+
+    int row = get_offset_row(offset);
+    int col = get_offset_col(offset);
+
+    print_char('\b', row, col, WHITE_ON_BLACK);
+}
+
+
+/////////////////////////////////////////////////////////////////////////
+
 
 int print_char(char character, int row, int col, char attribute_byte) {
     unsigned char* video_memory = (unsigned char *) VIDEO_ADDRESS;
@@ -65,7 +84,12 @@ int print_char(char character, int row, int col, char attribute_byte) {
     if (character == '\n') {
         int row = get_offset_row(offset);
         offset = get_screen_offset(row + 1, 0);
-    } else {
+    }
+    else if (character == '\b') {
+        video_memory[offset] = ' ';
+        video_memory[offset + 1] = attribute_byte;
+    }
+    else {
         video_memory[offset] = character;
         video_memory[offset + 1] = attribute_byte;
         offset += 2;
