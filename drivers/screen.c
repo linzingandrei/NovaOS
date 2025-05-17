@@ -4,6 +4,7 @@
 
 
 // Function declarations
+///////////////////////////////////////////////////////////////////////////
 int get_cursor_offset();
 void set_cursor_offset(int offset);
 int print_char(char c, int row, int col, char attr);
@@ -56,7 +57,21 @@ void kprint_backspace() {
     print_char('\b', row, col, WHITE_ON_BLACK);
 }
 
+void clear_screen() {
+    int row = 0;
+    int col = 0;
 
+    for (row = 0; row < MAX_ROWS; row++) {
+        for (col = 0; col < MAX_COLS; col++) {
+            print_char(' ', row, col, WHITE_ON_BLACK);
+        }
+    }
+
+    set_cursor_offset(get_screen_offset(0, 0));
+}
+
+
+// Private kernel functions
 /////////////////////////////////////////////////////////////////////////
 
 
@@ -147,18 +162,4 @@ void set_cursor_offset(int offset) {
     port_byte_out(REG_SCREEN_DATA, (unsigned char) (offset >> 8));
     port_byte_out(REG_SCREEN_CTRL, 15);
     port_byte_out(REG_SCREEN_DATA, (unsigned char) (offset & 0xff));
-}
-
-
-void clear_screen() {
-    int row = 0;
-    int col = 0;
-
-    for (row = 0; row < MAX_ROWS; row++) {
-        for (col = 0; col < MAX_COLS; col++) {
-            print_char(' ', row, col, WHITE_ON_BLACK);
-        }
-    }
-
-    set_cursor_offset(get_screen_offset(0, 0));
 }

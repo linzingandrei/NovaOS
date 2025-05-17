@@ -8,3 +8,10 @@ void memory_copy(char* source, char* dest, int no_bytes) {
         *(dest + i) = *(source + i);
     }
 }
+
+int strlen(char* s) {
+    int i = 0;
+
+    while (s[i] != '\0') i++;
+        return i;
+}
