@@ -32,3 +32,10 @@ void int_to_ascii(int n, char* str) {
     }
     str[i] = '\0';
 }
+
+void sleep(u32 ms) {
+    u32 ticks = ms / 10;
+
+    u32 start_tick = timer_ticks;
+    while ((timer_ticks - start_tick) < ticks) {}
+}

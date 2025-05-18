@@ -60,5 +60,7 @@ void keyboard_input_loop() {
             key_buffer[strlen(key_buffer) + 1] = '\0';
             kputchar(ch);
         }
+
+        sleep(30);
     }
 }
