@@ -4,6 +4,7 @@
 #include "types.h"
 #include "idt.h"
 #include "../drivers/screen.h"
+#include "../kernel/util.h"
 
 
 extern void isr0();

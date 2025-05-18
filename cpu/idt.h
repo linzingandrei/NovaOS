@@ -21,9 +21,6 @@ struct idt_ptr {
 
 #define IDT_ENTRIES 256
 
-extern struct idt_entry idt[IDT_ENTRIES];
-extern struct idt_ptr idtp;
-
 void set_idt_gate(int n, u32 handler);
 void idt_install();
 

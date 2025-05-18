@@ -18,7 +18,6 @@ void kprint_at(char* message, int row, int col) {
     int offset;
 
     if (row >= 0 && col >= 0) {
-        // set_cursor_offset(get_screen_offset(row, col));
         offset = get_screen_offset(row, col);
     } else {
         offset = get_cursor_offset();
@@ -110,20 +109,21 @@ int print_char(char character, int row, int col, char attribute_byte) {
         offset += 2;
     }
 
-    if (offset >= MAX_ROWS * MAX_COLS * 2) {
+    if (get_offset_row(offset) >= MAX_ROWS) {
         int i;
 
         for (int i = 1; i < MAX_ROWS; i++) {
             memory_copy(
-                    (char*)(get_screen_offset(i, 0) + VIDEO_ADDRESS),
-                    (char*)(get_screen_offset(i - 1, 0) + VIDEO_ADDRESS),
-                    MAX_COLS * 2
+                (char*)(get_screen_offset(i, 0) + VIDEO_ADDRESS),
+                (char*)(get_screen_offset(i - 1, 0) + VIDEO_ADDRESS),
+                MAX_COLS * 2
             );
         }
 
-        char* last_line = (char *)(get_screen_offset(MAX_ROWS - 1, 0) + VIDEO_ADDRESS);
-        for (int i = 0; i < MAX_COLS * 2; i++) {
-            last_line[i] = 0;
+        char *last_line = (char *)(get_screen_offset(MAX_ROWS - 1, 0) + VIDEO_ADDRESS);
+        for (int i = 0; i < MAX_COLS * 2; i += 2) {
+            last_line[i] = 0x20;
+            last_line[i + 1] = attribute_byte;
         }
 
         offset -= MAX_COLS * 2;

@@ -10,7 +10,7 @@ static inline u8 inb(u16 port) {
     return ret;
 }
 
-static s8 key_buffer[256];
+static s8 key_buffer[256] = {0};
 
 static const s8 scancode_ascii[128] = {
     [0x02] = '1', [0x03] = '2', [0x04] = '3', [0x05] = '4',

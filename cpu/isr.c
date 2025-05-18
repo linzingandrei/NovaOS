@@ -34,11 +34,9 @@ void isr_install() {
     set_idt_gate(29, (u32)isr29);
     set_idt_gate(30, (u32)isr30);
     set_idt_gate(31, (u32)isr31);
-
-    idt_install();
 }
 
-char *exception_messages[] = {
+char *exception_messages[32] = {
     "Divison By Zero",
     "Debug",
     "Non Maskable Interrupt",
@@ -75,7 +73,19 @@ char *exception_messages[] = {
 
 void fault_handler(struct registers_t *regs) {
     if (regs->int_no < 32) {
+        kprint("Interrupt detected: ");
+        char num_buffer[16];
+        int_to_ascii(regs->int_no, num_buffer);
+        kprint(num_buffer);
+
+        kprint("\nMessage: ");
         kprint(exception_messages[regs->int_no]);
+
+        char buffer[16];
+        int_to_ascii(regs->err_code, buffer);
+        kprint("\nError code: ");
+        kprint(buffer);
+
         for (;;);
     }
 }
