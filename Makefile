@@ -12,20 +12,23 @@ CFLAGS = -g
 all: os-image.bin
 
 run: all
-	qemu-system-i386 -fda os-image.bin
+	qemu-system-i386 -drive format=raw,file=os-image.bin
 
 debug: os-image.bin kernel.elf
 	qemu-system-i386 -s -fda os-image.bin &
 	${GDB} -ex "target remote localhost:1234" -ex "symbol-file kernel.elf"
 
 os-image.bin: boot/boot.bin kernel.bin
-	cat $^ > os-image.bin
+	# cat $^ > os-image.bin
+	dd if=/dev/zero of=os-image.bin bs=512 count=64 status=none
+	dd if=boot/boot.bin of=os-image.bin bs=512 seek=0 conv=notrunc status=none
+	dd if=kernel.bin   of=os-image.bin bs=512 seek=1 conv=notrunc status=none
 
 kernel.elf: boot/kernel_entry.o ${OBJ}
-	${LD} -o $@ -Ttext 0x1000 $^
+	${LD} -o $@ -Ttext 0x7E00 $^
 
 kernel.bin: boot/kernel_entry.o ${OBJ}
-	${LD} -o $@ -Ttext 0x1000 $^ --oformat binary
+	${LD} -o $@ -Ttext 0x7E00 $^ --oformat binary
 
 %.o : %.c ${HEADERS}
 	${CC} ${CFLAGS} -ffreestanding -c $< -o $@

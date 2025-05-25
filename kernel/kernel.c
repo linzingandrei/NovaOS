@@ -1,30 +1,36 @@
 #include "../drivers/screen.h"
 #include "../drivers/keyboard.h"
-#include "../cpu/timer.h"
+#include "../drivers/cursor.h"
 
 
 void main() {
-    kprint("Installing idt...\n");
     idt_install();
-    kprint("Done\n");
-
-    kprint("Installing isr...\n");
     isr_install();
-    kprint("Done\n");
-
-    kprint("Installing irq...\n");
     irq_install();
-    kprint("Done\n");
+
+    screen_init();
 
     __asm__ __volatile__("sti");
 
     install_timer();
 
-    clear_screen();
+    print_string("**********************\n");
+    print_string("**********************\n");
+    print_string("** Welcome!         **\n");
+    print_string("**                  **\n");
+    print_string("**                  **\n");
+    print_string("**                  **\n");
+    print_string("**********************\n");
+    print_string("**********************\n");
+    print_string("> ");
 
-    kprint("Welcome!\n");
+    install_keyboard();
 
+    // screen_put();
+
+    // print_char('a');
+    // print_char('A', 10, 60, 0xAC);
     // int a = 3 / 0;
 
-    keyboard_input_loop();
+    // keyboard_input_loop();
 }

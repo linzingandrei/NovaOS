@@ -1,18 +1,26 @@
 [org 0x7c00]
-KERNEL_OFFSET equ 0x1000
+KERNEL_OFFSET equ 0x7E00
 
     mov [BOOT_DRIVE], dl
 
-    mov bp, 0x9000
+    mov bp, 0x3000
     mov sp, bp
 
-    mov bx, MSG_REAL_MODE
-    call print
-    call print_nl
+    mov ah, 0x00
+    mov al, 0x13
+    int 0x10
 
     call load_kernel
-    call switch_to_pm
-    jmp $
+
+    in al, 0x92
+    test al, 2
+    jnz after
+    or al, 2
+    and al, 0xFE
+    out 0x92, al
+    after:
+        call switch_to_pm
+        jmp $
 
 %include "boot/print.asm"
 %include "boot/disk.asm"
@@ -22,12 +30,12 @@ KERNEL_OFFSET equ 0x1000
 
 [bits 16]
 load_kernel:
-    mov bx, MSG_LOAD_KERNEL
-    call print
-    call print_nl
 
     mov bx, KERNEL_OFFSET
-    mov dh, 32
+    mov ax, 0x0
+    mov es, ax
+    mov cx, 60 
+    mov edi, 1
     mov dl, [BOOT_DRIVE]
     call disk_load
 
@@ -35,18 +43,10 @@ load_kernel:
 
 [bits 32]
 BEGIN_PM:
-    mov ebx, MSG_PROT_MODE
-    call print_string_pm
-
-    call KERNEL_OFFSET
-
-    jmp $
+    jmp KERNEL_OFFSET
 
 
-BOOT_DRIVE db 0
-MSG_REAL_MODE db "Started in 16-bit real mode", 0
-MSG_PROT_MODE db "Successfully landed in 32-bit protected mode", 0
-MSG_LOAD_KERNEL db "Loading kernel into memory...", 0
+BOOT_DRIVE db 0x80
 
 times 510-($-$$) db 0
-dw 0xaa55
+dw 0xAA55

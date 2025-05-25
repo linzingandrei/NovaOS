@@ -9,6 +9,13 @@ void memory_copy(char* source, char* dest, int no_bytes) {
     }
 }
 
+void memory_set(char* dest, char val, int no_bytes) {
+    char *temp = (char *) dest;
+    for (; no_bytes != 0; no_bytes--) {
+        *temp++ = val;
+    }
+}
+
 int strlen(char* s) {
     int i = 0;
 
@@ -38,4 +45,12 @@ void sleep(u32 ms) {
 
     u32 start_tick = timer_ticks;
     while ((timer_ticks - start_tick) < ticks) {}
+}
+
+int strcmp(char *s1, char *s2) {
+    int i;
+    for (i = 0; s1[i] == s2[i]; i++) {
+        if (s1[i] == '\0') return 0;
+    }
+    return s1[i] - s2[i];
 }

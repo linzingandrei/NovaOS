@@ -73,19 +73,7 @@ char *exception_messages[32] = {
 
 void fault_handler(struct registers_t *regs) {
     if (regs->int_no < 32) {
-        kprint("Interrupt detected: ");
-        char num_buffer[16];
-        int_to_ascii(regs->int_no, num_buffer);
-        kprint(num_buffer);
-
-        kprint("\nMessage: ");
-        kprint(exception_messages[regs->int_no]);
-
-        char buffer[16];
-        int_to_ascii(regs->err_code, buffer);
-        kprint("\nError code: ");
-        kprint(buffer);
-
+        print_string(exception_messages[regs->int_no]);
         for (;;);
     }
 }
