@@ -3,6 +3,7 @@
 #include "../kernel/util.h"
 #include "cursor.h"
 #include "../cpu/irq.h"
+#include "../cpu/pio.h"
 
 static inline u8 inb(u16 port);
 s8 keyboard_get_char();

@@ -43,6 +43,7 @@ s8 keyboard_get_char() {
 
 int view = 0;
 u32 raw_row = 0;
+char pio_buffer[600];
 void keyboard_input(struct registers_t *regs) {
     s8 ch = keyboard_get_char();
     u32 raw_col = text->raw_col % TEXT_COLS;
@@ -70,6 +71,19 @@ void keyboard_input(struct registers_t *regs) {
         }
         else if (strcmp(key_buffer, "exit") == 0) {
             view = 0;
+        }
+        else if (strcmp(key_buffer, "pio") == 0 && view == 0) {
+            memory_set(pio_buffer, 0, 600);
+            ata_pio_read28(50, 1, pio_buffer);
+            dump_sector_hex(pio_buffer, 512);
+        }
+        else if (strcmp(key_buffer, "testwrite") == 0 && view == 0) {
+            char message[100] = "Hello!";
+            memory_copy(message, pio_buffer, strlen(message));
+            ata_pio_write28(50, 1, pio_buffer);
+            print_string("Gata\n");
+            ata_pio_read28(50, 1, pio_buffer);
+            dump_sector_hex(pio_buffer, 32);
         }
         else {
             if (view == 0)

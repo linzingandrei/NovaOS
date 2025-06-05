@@ -54,3 +54,27 @@ int strcmp(char *s1, char *s2) {
     }
     return s1[i] - s2[i];
 }
+
+char hex_digit(u8 value) {
+    return (value < 10) ? ('0' + value) : ('A' + (value - 10));
+}
+
+void print_hex8(u8 value) {
+    char hex[5];
+    hex[0] = '0';
+    hex[1] = 'x';
+    hex[2] = hex_digit((value >> 4) & 0xF);
+    hex[3] = hex_digit(value & 0xF);
+    hex[4] = '\0';
+    print_string(hex);
+}
+
+void dump_sector_hex(u8 *buf, u16 cnt) {
+    for (int i = 0; i < cnt; i++) {
+        print_hex8(buf[i]);
+        print_string(" ");
+        if ((i + 1) % 16 == 0) {
+            print_string("\n");
+        }
+    }
+}

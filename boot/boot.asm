@@ -1,4 +1,4 @@
-[org 0x7c00]
+org 0x7c00
 KERNEL_OFFSET equ 0x7E00
 
     mov [BOOT_DRIVE], dl
@@ -28,20 +28,16 @@ KERNEL_OFFSET equ 0x7E00
 %include "boot/32bit_print.asm"
 %include "boot/switch_pm.asm"
 
-[bits 16]
+bits 16
 load_kernel:
-
     mov bx, KERNEL_OFFSET
-    mov ax, 0x0
-    mov es, ax
-    mov cx, 60 
-    mov edi, 1
+    mov dh, 63 
     mov dl, [BOOT_DRIVE]
     call disk_load
 
     ret
 
-[bits 32]
+bits 32
 BEGIN_PM:
     jmp KERNEL_OFFSET
 

@@ -20,7 +20,7 @@ debug: os-image.bin kernel.elf
 
 os-image.bin: boot/boot.bin kernel.bin
 	# cat $^ > os-image.bin
-	dd if=/dev/zero of=os-image.bin bs=512 count=64 status=none
+	dd if=/dev/zero of=os-image.bin bs=512 count=1024 status=none
 	dd if=boot/boot.bin of=os-image.bin bs=512 seek=0 conv=notrunc status=none
 	dd if=kernel.bin   of=os-image.bin bs=512 seek=1 conv=notrunc status=none
 
