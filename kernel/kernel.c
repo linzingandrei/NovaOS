@@ -1,6 +1,7 @@
 #include "../drivers/screen.h"
 #include "../drivers/keyboard.h"
 #include "../drivers/cursor.h"
+#include "../fs/ffs.h"
 
 
 void main() {
@@ -14,6 +15,8 @@ void main() {
 
     install_timer();
 
+    format(5);
+
     print_string("**********************\n");
     print_string("**********************\n");
     print_string("** Welcome!         **\n");
@@ -23,6 +26,11 @@ void main() {
     print_string("**********************\n");
     print_string("**********************\n");
     print_string("> ");
+
+    struct superblock_t *sb;
+
+    write_file("HELLO", "ACASA", 5);
+    write_file("HELLO2", "ACASA2", 6);
 
     install_keyboard();
 

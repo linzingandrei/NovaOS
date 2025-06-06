@@ -1,6 +1,7 @@
 #include "types.h"
 #include "../drivers/ports.h"
 #include "pio.h"
+#include "timer.h"
 
 /*
 An example of a 28 bit LBA PIO mode read on the Primary bus:
@@ -60,4 +61,5 @@ void ata_pio_write28(u32 LBA, u8 sector_count, u8 *target) {
     }
 
     port_byte_out(0x1F7, 0xE7);
+    while (port_byte_in(0x1F7) & (1 << 7)) {}
 }

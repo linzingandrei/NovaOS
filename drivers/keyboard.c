@@ -1,4 +1,5 @@
 #include "keyboard.h"
+#include "../fs/ffs.h"
 
 #define KB_DATA_PORT   0x60
 #define KB_STATUS_PORT 0x64
@@ -28,16 +29,48 @@ static const s8 scancode_ascii[128] = {
     [0x1C] = '\n',
     [0x39] = ' ',
 };
+static const s8 shift_scancode_ascii[128] = {
+    [0x02] = '!', [0x03] = '@', [0x04] = '#', [0x05] = '$',
+    [0x06] = '%', [0x07] = '^', [0x08] = '&', [0x09] = '*',
+    [0x0A] = '(', [0x0B] = ')',
+    [0x10] = 'Q', [0x11] = 'W', [0x12] = 'E', [0x13] = 'R',
+    [0x14] = 'T', [0x15] = 'Y', [0x16] = 'U', [0x17] = 'I',
+    [0x18] = 'O', [0x19] = 'P',
+    [0x1E] = 'A', [0x1F] = 'S', [0x20] = 'D', [0x21] = 'F',
+    [0x22] = 'G', [0x23] = 'H', [0x24] = 'J', [0x25] = 'K',
+    [0x26] = 'L',
+    [0x2C] = 'Z', [0x2D] = 'X', [0x2E] = 'C', [0x2F] = 'V',
+    [0x30] = 'B', [0x31] = 'N', [0x32] = 'M',
+};
 
+u8 shift_pressed = 0;
 s8 keyboard_get_char() {
     u8 scancode;
 
     scancode = inb(0x60);
 
+    switch (scancode) {
+        case 0x2A:
+        case 0x36:
+            shift_pressed = 1; 
+            break;
+
+        case 0xAA: 
+        case 0xB6: 
+            shift_pressed = 0; 
+            break;
+
+        default: break;
+    }
+
     if (scancode & 0x80)
         return 0;
-    if (scancode < 128)
-        return scancode_ascii[scancode];
+    
+    if (scancode < 128) {
+        char c = shift_pressed ? shift_scancode_ascii[scancode] : scancode_ascii[scancode];
+        return c;
+    }
+
     return 0;
 }
 
@@ -56,7 +89,6 @@ void keyboard_input(struct registers_t *regs) {
     if (ch == '\n') {
         print_char(ch);
         raw_col = text->raw_col;
-        // print_string(key_buffer);
         // print_char(ch);
 
         if (strcmp(key_buffer, "cls") == 0 && view == 0) {
@@ -74,8 +106,16 @@ void keyboard_input(struct registers_t *regs) {
         }
         else if (strcmp(key_buffer, "pio") == 0 && view == 0) {
             memory_set(pio_buffer, 0, 600);
-            ata_pio_read28(50, 1, pio_buffer);
+            ata_pio_read28(66, 1, pio_buffer);
             dump_sector_hex(pio_buffer, 512);
+            u8 ok = '0';
+            for (int i = 0; i < sizeof(pio_buffer); i++) {
+                if (pio_buffer[i] != 0x00) {
+                    ok = '1';
+                }
+            }
+            print_char(ok);
+
         }
         else if (strcmp(key_buffer, "testwrite") == 0 && view == 0) {
             char message[100] = "Hello!";
@@ -84,6 +124,27 @@ void keyboard_input(struct registers_t *regs) {
             print_string("Gata\n");
             ata_pio_read28(50, 1, pio_buffer);
             dump_sector_hex(pio_buffer, 32);
+        }
+        else if (strcmp(key_buffer, "ls") == 0 && view == 0) {
+            list_files();
+        }
+        else if (strncmp(key_buffer, "cat", 1) == 0 && view == 0) {
+            // print_string("DA");
+            u8 rest_chars[27];
+            memory_set(rest_chars, 0, strlen(rest_chars));
+
+            for (int i = 4; i < strlen(key_buffer); i++) {
+                rest_chars[i - 4] = key_buffer[i];
+            }
+            rest_chars[strlen(rest_chars)] = '\0';
+
+            // print_string(rest_chars);
+
+            // // memory_set(first_3_chars, 0, strlen(first_3_chars));
+            // // memory_set(rest_chars, 0, strlen(rest_chars));
+
+            read_file(rest_chars);
+            print_char('\n');
         }
         else {
             if (view == 0)

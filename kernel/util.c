@@ -55,6 +55,14 @@ int strcmp(char *s1, char *s2) {
     return s1[i] - s2[i];
 }
 
+int strncmp(char *s1, char *s2, int n) {
+    int i;
+    for (i = 0; s1[i] == s2[i] && n > 0; i++ && n--) {
+        if (s1[i] == '\0') return 0;
+    }
+    return s1[i] - s2[i];
+}
+
 char hex_digit(u8 value) {
     return (value < 10) ? ('0' + value) : ('A' + (value - 10));
 }
