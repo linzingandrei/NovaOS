@@ -29,7 +29,7 @@ void format(u32 total_blocks) {
     }
 }
 
-void list_files() {
+void list_files(u8 *options) {
     struct file_entry_t entries[MAX_FILES];
 
     for (int i = 0; i < FILE_TABLE_BLOCKS; i++) {
@@ -39,14 +39,24 @@ void list_files() {
     for (int i = 0; i < MAX_FILES; i++) {
         if (entries[i].used) {
             print_string(entries[i].name);
+            if (strcmp(options, "-l") == 0) {
+                print_string("   ");
+                print_int(FS_START_SECTOR + entries[i].start_block);
+                print_string("   ");
+                print_int(entries[i].byte_count);
+                print_string(" bytes");
+            }
             print_char('\n');
         }
     }
 }
 
-int write_file(u8 *file_name, u8 *file_data, u8 file_size) {
+int write_file(u8 *file_name, u8 *file_data, u32 file_size) {
+    // print_string(file_data);
+    // print_char('\n');
+
     struct file_entry_t entries[MAX_FILES];
-    u8 sector_buffer[BLOCK_SIZE];
+    u8 sector_buffer[BLOCK_SIZE + 1];
 
     for (int i = 0; i < FILE_TABLE_BLOCKS; i++) {
         ata_pio_read28(FS_START_SECTOR + i + 1, 1, &((u8 *)entries)[i * BLOCK_SIZE]);
@@ -54,16 +64,29 @@ int write_file(u8 *file_name, u8 *file_data, u8 file_size) {
 
     u32 free_space = -1;
     int nr = 0;
+    int nr2 = 0;
     for (int i = 0; i < MAX_FILES; i++) {
-        if (entries[i].used != 1) {
-            // print_hex8((u8)i);
-            if (i > 0)
-                free_space = entries[i - 1].start_block;
-            else
-                free_space = entries[i].start_block;
+        // if (i < 10) {
+        //     print_string("i: ");
+        //     print_hex8((u8)i);
+        //     print_string("start_block: ");
+        //     print_hex8(entries[i].start_block);
+        //     print_char('\n');
+        // }
 
-            // print_hex8((u8)free_space);
+        if (entries[i].used == 0) {
+            // print_string("i: ");
+            // print_hex8((u8)i);
+            // print_char('\n');
+            // if (i > 0)
+            //     free_space = entries[i - 1].start_block;
+            // else
+            free_space = i;// entries[i].start_block;
+
             break;
+        }
+        else {
+            nr2 += entries[i].byte_count;
         }
         nr += 1;
     }
@@ -71,27 +94,47 @@ int write_file(u8 *file_name, u8 *file_data, u8 file_size) {
     if (free_space == -1) {
         return 0;
     }
-    // print_hex8((u8)free_space);
 
-    u32 start_block = sb.file_table_blocks + 1 + nr;   // 1 + sb.file_table_blocks;
+    u32 start_block = sb.file_table_blocks + nr + 1 + (nr2 + BLOCK_SIZE) / 512;   // 1 + sb.file_table_blocks;
     u32 num_blocks = (file_size + BLOCK_SIZE - 1) / BLOCK_SIZE;
 
+    // print_string("num_blocks: ");
+    // print_int(num_blocks);
+    // print_char('\n');
+
+    // print_string("start_block: ");
     // print_hex8((u8)start_block);
+    // print_char('\n');
+
+    // print_string("free_space: ");
+    // print_hex8((u8)free_space);
+    // print_char('\n');
+
+    // print_string("file_data: ");
+    // print_string(file_data);
+    // print_char('\n');
+
+    // print_string("file_size: ");
+    // print_int(file_size);
+    // print_char('\n');
 
     for (int i = 0; i < num_blocks; i++) {
-        memory_set(sector_buffer, 0, BLOCK_SIZE);
+        // memory_set(sector_buffer, 0, BLOCK_SIZE);
         for (int j = 0; j < BLOCK_SIZE; j++) {
             u32 index = i * BLOCK_SIZE + j;
 
-            if (index < file_size)
+            if (index < file_size) {
                 sector_buffer[j] = file_data[index];
+                // print_char(file_data[index]);
+
+            }
             else
                 sector_buffer[j] = 0x00;
         }
 
         // print_hex8(strlen(sector_buffer));
         // print_string(sector_buffer);
-        ata_pio_write28(FS_START_SECTOR + start_block + i, 1, sector_buffer);
+        ata_pio_write28(FS_START_SECTOR + start_block + i + 1, 1, sector_buffer);
     }
     // ata_pio_write28(37, 1, file_data);
 
@@ -101,7 +144,7 @@ int write_file(u8 *file_name, u8 *file_data, u8 file_size) {
         if (file_name[i] == 0)
             break;
     }
-    entries[free_space].start_block = start_block * num_blocks;
+    entries[free_space].start_block = start_block;
     entries[free_space].byte_count = file_size;
     entries[free_space].used = 1;
 
@@ -114,11 +157,14 @@ int write_file(u8 *file_name, u8 *file_data, u8 file_size) {
 
 int read_file(u8 *file_name) {
     struct file_entry_t entries[MAX_FILES];
-    u8 sector_buffer[BLOCK_SIZE];
+    u8 sector_buffer[BLOCK_SIZE + 10];
 
     for (int i = 0; i < FILE_TABLE_BLOCKS; i++) {
         ata_pio_read28(FS_START_SECTOR + i + 1, 1, &((u8 *)entries)[i * BLOCK_SIZE]);
     }
+
+    // print_string(file_name);
+    // print_char('\n');
 
     u32 start_block_aux = 0;
     u32 byte_count_aux = 0;
@@ -137,17 +183,26 @@ int read_file(u8 *file_name) {
     }
 
     // print_hex8((u8)number_sectors);
-    // print_hex8((u8)start_block_aux);
+    // print_int(start_block_aux);
+    // print_char('\n');
     // ata_pio_read28(FS_START_SECTOR + start_block_aux, 1, sector_buffer);
     // print_string(sector_buffer);
 
     u32 number_sectors = (byte_count_aux + BLOCK_SIZE) / 512;
-    // print_hex8((u8)number_sectors);
+    // print_int(number_sectors);
     // print_hex8((u8)(FS_START_SECTOR + start_block_aux));
     memory_set(sector_buffer, 0, sizeof(sector_buffer));
+    // ata_pio_read28(FS_START_SECTOR + start_block_aux + 0 + 1, 1, sector_buffer);
+    // print_string("sector buffer: ");
+    // print_string((u8 *)sector_buffer);
+    // print_int(strlen(sector_buffer));
+    // print_char('\n');
 
     for (int i = 0; i < number_sectors; i++) {
-        ata_pio_read28(FS_START_SECTOR + start_block_aux + i, 1, sector_buffer);
+        ata_pio_read28(FS_START_SECTOR + start_block_aux + i + 1, 1, sector_buffer);
+        // print_string("sector buffer: ");
+        // print_string(sector_buffer);
+        // print_char('\n');
 
         for (int j = 0; j < strlen(sector_buffer); j++) {
             print_char(sector_buffer[j]);
@@ -157,4 +212,14 @@ int read_file(u8 *file_name) {
     }
 
     return 0;
+}
+
+int edit_file(u8 *file_name, u8 *file_data, u8 file_size) {
+    struct file_entry_t entries[MAX_FILES];
+    u8 sector_buffer[BLOCK_SIZE];
+
+    for (int i = 0; i < FILE_TABLE_BLOCKS; i++) {
+        ata_pio_read28(FS_START_SECTOR + i + 1, 1, &((u8 *)entries)[i * BLOCK_SIZE]);
+    }
+
 }

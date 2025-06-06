@@ -57,15 +57,40 @@ int strcmp(char *s1, char *s2) {
 
 int strncmp(char *s1, char *s2, int n) {
     int i;
-    for (i = 0; s1[i] == s2[i] && n > 0; i++ && n--) {
+    for (i = 0; i < n && s1[i] == s2[i]; i++) {
         if (s1[i] == '\0') return 0;
     }
+    if (i == n)
+        return 0;
     return s1[i] - s2[i];
 }
 
 char hex_digit(u8 value) {
     return (value < 10) ? ('0' + value) : ('A' + (value - 10));
 }
+
+void print_int(u32 value) {
+    if (value == 0) {
+        print_char('0');
+        print_char('\n');
+        return;
+    }
+
+    u8 result[100];
+    int i = 0;
+
+    while (value > 0) {
+        result[i++] = (value % 10) + '0';
+        value /= 10;
+    }
+
+    while (i > 0) {
+        i -= 1;
+        print_char(result[i]);
+    }
+    // print_char('\n');
+}
+
 
 void print_hex8(u8 value) {
     char hex[5];

@@ -29,8 +29,9 @@ struct file_entry_t {
 } __attribute__((packed));
 
 void format(u32 total_blocks);
-void list_files();
-int write_file(u8 *file_name, u8 *file_data, u8 file_size);
+void list_files(u8 *options);
+int write_file(u8 *file_name, u8 *file_data, u32 file_size);
 int read_file(u8 *file_name);
+int edit_file(u8 *file_name, u8 *file_data, u8 file_size);
 
 #endif

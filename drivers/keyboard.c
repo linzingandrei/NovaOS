@@ -41,6 +41,7 @@ static const s8 shift_scancode_ascii[128] = {
     [0x26] = 'L',
     [0x2C] = 'Z', [0x2D] = 'X', [0x2E] = 'C', [0x2F] = 'V',
     [0x30] = 'B', [0x31] = 'N', [0x32] = 'M',
+    [0x35] = '?',
 };
 
 u8 shift_pressed = 0;
@@ -77,6 +78,7 @@ s8 keyboard_get_char() {
 int view = 0;
 u32 raw_row = 0;
 char pio_buffer[600];
+char view_buffer[5000] = {0};
 void keyboard_input(struct registers_t *regs) {
     s8 ch = keyboard_get_char();
     u32 raw_col = text->raw_col % TEXT_COLS;
@@ -99,34 +101,60 @@ void keyboard_input(struct registers_t *regs) {
             if (view != 1) {
                 raw_row = text->raw_col;
             }
-            view = 1;
+            view = 1; 
+            memory_set(view_buffer, 0, 5000);
+        }
+        else if (strncmp(key_buffer, "save", 3) == 0 && view == 1) {
+            // print_string("DA");
+            // print_char('\n');
+
+            u8 rest_chars[27];
+            memory_set(rest_chars, 0, strlen(rest_chars));
+
+            for (int i = 4; i < strlen(key_buffer); i++) {
+                rest_chars[i - 5] = key_buffer[i];
+            }
+            rest_chars[strlen(rest_chars)] = '\0';
+
+            // print_int(strlen(view_buffer));
+            // print_int(strlen(key_buffer));
+
+            u8 view_buffer_aux[5000] = {0};
+            memory_copy(view_buffer, view_buffer_aux, strlen(view_buffer) - strlen(key_buffer));
+            // memory_copy(view_buffer, view_buffer, strlen(view_buffer) - strlen(key_buffer));
+            write_file(rest_chars, view_buffer_aux, strlen(view_buffer_aux));
+
+            memory_set(view_buffer, 0, strlen(view_buffer));
+
+            // print_string(rest_chars);
         }
         else if (strcmp(key_buffer, "exit") == 0) {
             view = 0;
+            memory_set(view_buffer, 0, 5000);
         }
-        else if (strcmp(key_buffer, "pio") == 0 && view == 0) {
-            memory_set(pio_buffer, 0, 600);
-            ata_pio_read28(66, 1, pio_buffer);
-            dump_sector_hex(pio_buffer, 512);
-            u8 ok = '0';
-            for (int i = 0; i < sizeof(pio_buffer); i++) {
-                if (pio_buffer[i] != 0x00) {
-                    ok = '1';
-                }
-            }
-            print_char(ok);
+        // else if (strcmp(key_buffer, "pio") == 0 && view == 0) {
+        //     memory_set(pio_buffer, 0, 600);
+        //     ata_pio_read28(66, 1, pio_buffer);
+        //     dump_sector_hex(pio_buffer, 512);
+        //     u8 ok = '0';
+        //     for (int i = 0; i < sizeof(pio_buffer); i++) {
+        //         if (pio_buffer[i] != 0x00) {
+        //             ok = '1';
+        //         }
+        //     }
+        //     print_char(ok);
 
-        }
-        else if (strcmp(key_buffer, "testwrite") == 0 && view == 0) {
-            char message[100] = "Hello!";
-            memory_copy(message, pio_buffer, strlen(message));
-            ata_pio_write28(50, 1, pio_buffer);
-            print_string("Gata\n");
-            ata_pio_read28(50, 1, pio_buffer);
-            dump_sector_hex(pio_buffer, 32);
-        }
+        // }
+        // else if (strcmp(key_buffer, "testwrite") == 0 && view == 0) {
+        //     char message[100] = "Hello!";
+        //     memory_copy(message, pio_buffer, strlen(message));
+        //     ata_pio_write28(50, 1, pio_buffer);
+        //     print_string("Gata\n");
+        //     ata_pio_read28(50, 1, pio_buffer);
+        //     dump_sector_hex(pio_buffer, 32);
+        // }
         else if (strcmp(key_buffer, "ls") == 0 && view == 0) {
-            list_files();
+            list_files("-l");
         }
         else if (strncmp(key_buffer, "cat", 1) == 0 && view == 0) {
             // print_string("DA");
@@ -145,6 +173,9 @@ void keyboard_input(struct registers_t *regs) {
 
             read_file(rest_chars);
             print_char('\n');
+        }
+        else if (strcmp(key_buffer, "stopos") == 0 && view == 0) {
+            asm("hlt");
         }
         else {
             if (view == 0)
@@ -166,6 +197,7 @@ void keyboard_input(struct registers_t *regs) {
             if (view == 1) {
                 if((text->raw_col / TEXT_COLS) * SCREEN_WIDTH + (text->raw_col % TEXT_COLS) > raw_row * 8) {
                     key_buffer[strlen(key_buffer) - 1] = '\0';
+                    view_buffer[strlen(view_buffer) - 1] = '\0';
                     backspace();
                 }
             }
@@ -175,6 +207,12 @@ void keyboard_input(struct registers_t *regs) {
         key_buffer[strlen(key_buffer)] = ch;
         key_buffer[strlen(key_buffer) + 1] = '\0';
         print_char(ch);
+
+        if (view == 1) {
+            view_buffer[strlen(view_buffer)] = ch;
+            view_buffer[strlen(view_buffer) + 1] = '\0';
+            // print_char(ch);
+        }
     }
 }
 

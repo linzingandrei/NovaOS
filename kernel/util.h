@@ -15,5 +15,6 @@ int strncmp(char *s1, char *s2, int n);
 char hex_digit(u8 value);
 void print_hex8(u8 value);
 void dump_sector_hex(u8 *buf, u16 cnt);
+void print_int(u32 value);
 
 #endif
