@@ -78,6 +78,7 @@ s8 keyboard_get_char() {
 int view = 0;
 u32 raw_row = 0;
 char pio_buffer[600];
+int where_view_mode_starts = 0;
 char view_buffer[5000] = {0};
 void keyboard_input(struct registers_t *regs) {
     s8 ch = keyboard_get_char();
@@ -89,6 +90,11 @@ void keyboard_input(struct registers_t *regs) {
     }
 
     if (ch == '\n') {
+        if (view == 1) {
+            view_buffer[strlen(view_buffer)] = ch;
+            view_buffer[strlen(view_buffer) + 1] = '\0';
+        }
+
         print_char(ch);
         raw_col = text->raw_col;
         // print_char(ch);
@@ -102,6 +108,9 @@ void keyboard_input(struct registers_t *regs) {
                 raw_row = text->raw_col;
             }
             view = 1; 
+            where_view_mode_starts = text->raw_col;
+            // print_int(where_view_mode_starts);
+            // print_char('\n');
             memory_set(view_buffer, 0, 5000);
         }
         else if (strncmp(key_buffer, "save", 3) == 0 && view == 1) {
@@ -120,8 +129,9 @@ void keyboard_input(struct registers_t *regs) {
             // print_int(strlen(key_buffer));
 
             u8 view_buffer_aux[5000] = {0};
-            memory_copy(view_buffer, view_buffer_aux, strlen(view_buffer) - strlen(key_buffer));
+            memory_copy(view_buffer, view_buffer_aux, strlen(view_buffer) - strlen(key_buffer) - 2);
             // memory_copy(view_buffer, view_buffer, strlen(view_buffer) - strlen(key_buffer));
+
             write_file(rest_chars, view_buffer_aux, strlen(view_buffer_aux));
 
             memory_set(view_buffer, 0, strlen(view_buffer));
@@ -156,7 +166,17 @@ void keyboard_input(struct registers_t *regs) {
         else if (strcmp(key_buffer, "ls") == 0 && view == 0) {
             list_files("-l");
         }
-        else if (strncmp(key_buffer, "cat", 1) == 0 && view == 0) {
+        else if (strncmp(key_buffer, "rm", 2) == 0 && view == 0) {
+            u8 rest_chars[27];
+            memory_set(rest_chars, 0, strlen(rest_chars));
+
+            for (int i = 3; i < strlen(key_buffer); i++) {
+                rest_chars[i - 3] = key_buffer[i];
+            }
+
+            remove_file(rest_chars);
+        }
+        else if (strncmp(key_buffer, "cat", 3) == 0 && view == 0) {
             // print_string("DA");
             u8 rest_chars[27];
             memory_set(rest_chars, 0, strlen(rest_chars));
@@ -195,7 +215,8 @@ void keyboard_input(struct registers_t *regs) {
         }
         else {
             if (view == 1) {
-                if((text->raw_col / TEXT_COLS) * SCREEN_WIDTH + (text->raw_col % TEXT_COLS) > raw_row * 8) {
+                // if((text->raw_col / TEXT_COLS) * SCREEN_WIDTH + (text->raw_col % TEXT_COLS) > raw_row * 8) {
+                if (where_view_mode_starts < text->raw_col) {
                     key_buffer[strlen(key_buffer) - 1] = '\0';
                     view_buffer[strlen(view_buffer) - 1] = '\0';
                     backspace();
@@ -211,6 +232,9 @@ void keyboard_input(struct registers_t *regs) {
         if (view == 1) {
             view_buffer[strlen(view_buffer)] = ch;
             view_buffer[strlen(view_buffer) + 1] = '\0';
+
+            // print_string(view_buffer);
+            // print_char('\n');
             // print_char(ch);
         }
     }

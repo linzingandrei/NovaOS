@@ -157,7 +157,7 @@ int write_file(u8 *file_name, u8 *file_data, u32 file_size) {
 
 int read_file(u8 *file_name) {
     struct file_entry_t entries[MAX_FILES];
-    u8 sector_buffer[BLOCK_SIZE + 10];
+    u8 sector_buffer[BLOCK_SIZE + 1]; // needs to be bigger than BLOCK_SIZE ???? If + 1 is removed it puts another file title which makes absolutely no sense. Some kind of overflow I believe
 
     for (int i = 0; i < FILE_TABLE_BLOCKS; i++) {
         ata_pio_read28(FS_START_SECTOR + i + 1, 1, &((u8 *)entries)[i * BLOCK_SIZE]);
@@ -222,4 +222,52 @@ int edit_file(u8 *file_name, u8 *file_data, u8 file_size) {
         ata_pio_read28(FS_START_SECTOR + i + 1, 1, &((u8 *)entries)[i * BLOCK_SIZE]);
     }
 
+}
+
+int remove_file(u8 *file_name) {
+    struct file_entry_t entries[MAX_FILES];
+    u8 sector_buffer[BLOCK_SIZE + 1];
+    
+    for (int i = 0; i < FILE_TABLE_BLOCKS; i++) {
+        ata_pio_read28(FS_START_SECTOR + i + 1, 1, &((u8 *)entries)[i * BLOCK_SIZE]);
+    }
+
+    u32 file_location = -1;
+    u32 start_block = 0;
+    u32 byte_count = 0;
+    for (int i = 0; i < MAX_FILES; i++) {
+        if (strcmp(entries[i].name, file_name) == 0 && entries[i].used == 1) {
+            start_block = entries[i].start_block;
+            byte_count = entries[i].byte_count;
+
+            file_location = i;
+
+            break;
+        }
+    }
+
+    if (file_location == -1) {
+        return 1;
+    }
+
+    int num_blocks = (byte_count + 512) / 512;
+    for (int i = 0; i < num_blocks; i++) {
+        for (int j = 0; j < BLOCK_SIZE; j++) {
+            u32 index = i * BLOCK_SIZE + j;
+
+            sector_buffer[index] = 0;
+        }
+
+        ata_pio_write28(FS_START_SECTOR + start_block + i + 1, 1, sector_buffer);
+    }
+
+    memory_set(entries[file_location].name, 0, MAX_NAME_LENGTH);
+    entries[file_location].byte_count = 0;
+    entries[file_location].used = 0;
+
+    for (int i = 0; i < FILE_TABLE_BLOCKS; i++) {
+        ata_pio_write28(FS_START_SECTOR + i + 1, 1, &((u8 *)entries)[i * BLOCK_SIZE]);
+    }
+
+    return 0;
 }
