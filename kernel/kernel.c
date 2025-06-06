@@ -30,7 +30,7 @@ void main() {
     struct superblock_t *sb;
 
     write_file("HELLO", "ACASA", 5);
-    write_file("HELLO2", "ACASA2", 6);
+    // write_file("HELLO2", "ACASA2", 6);
 
     install_keyboard();
 
