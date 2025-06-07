@@ -88,9 +88,9 @@ int write_file(u8 *file_name, u8 *file_data, u32 file_size) {
 
         if (entries[i].used == 0) {
             sectors_needed -= 1;
-            print_string("i: ");
-            print_hex8((u8)i);
-            print_char('\n');
+            // print_string("i: ");
+            // print_hex8((u8)i);
+            // print_char('\n');
             // if (i > 0)
             //     free_space = entries[i - 1].start_block;
             // else
@@ -118,24 +118,24 @@ int write_file(u8 *file_name, u8 *file_data, u32 file_size) {
         return 0;
     }
 
-    print_string("nr: ");
-    print_int(nr);
-    print_char('\n');
+    // print_string("nr: ");
+    // print_int(nr);
+    // print_char('\n');
 
     u32 start_block = sb.file_table_blocks + (nr2 - ((file_size + 512) / 512)) + 1;// + (nr2 + BLOCK_SIZE) / 512;   // 1 + sb.file_table_blocks;
     u32 num_blocks = (file_size + BLOCK_SIZE - 1) / BLOCK_SIZE;
 
-    print_string("num_blocks: ");
-    print_int(num_blocks);
-    print_char('\n');
+    // print_string("num_blocks: ");
+    // print_int(num_blocks);
+    // print_char('\n');
 
-    print_string("start_block: ");
-    print_hex8((u8)start_block);
-    print_char('\n');
+    // print_string("start_block: ");
+    // print_hex8((u8)start_block);
+    // print_char('\n');
 
-    print_string("free_space: ");
-    print_hex8((u8)free_space);
-    print_char('\n');
+    // print_string("free_space: ");
+    // print_hex8((u8)free_space);
+    // print_char('\n');
 
     // print_string("file_data: ");
     // print_string(file_data);
@@ -161,8 +161,8 @@ int write_file(u8 *file_name, u8 *file_data, u32 file_size) {
 
         // print_hex8(strlen(sector_buffer));
         // print_string(sector_buffer);
-        print_int(FS_START_SECTOR + start_block + i + 1);
-        print_char('\n');
+        // print_int(FS_START_SECTOR + start_block + i + 1);
+        // print_char('\n');
         ata_pio_write28(FS_START_SECTOR + start_block + i + 1, 1, sector_buffer);
     }
     // ata_pio_write28(37, 1, file_data);
