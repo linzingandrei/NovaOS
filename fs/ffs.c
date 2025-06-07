@@ -41,7 +41,7 @@ void list_files(u8 *options) {
             print_string(entries[i].name);
             if (strcmp(options, "-l") == 0) {
                 print_string("   ");
-                print_int(FS_START_SECTOR + entries[i].start_block);
+                print_int(FS_START_SECTOR + entries[i].start_block + 1);
                 print_string("   ");
                 print_int(entries[i].byte_count);
                 print_string(" bytes");
@@ -65,6 +65,8 @@ int write_file(u8 *file_name, u8 *file_data, u32 file_size) {
     u32 free_space = -1;
     int nr = 0;
     int nr2 = 0;
+    u32 sectors_needed = (file_size + 512) / 512;
+    u32 sectors_needed_aux = sectors_needed;
     for (int i = 0; i < MAX_FILES; i++) {
         // if (i < 10) {
         //     print_string("i: ");
@@ -73,42 +75,67 @@ int write_file(u8 *file_name, u8 *file_data, u32 file_size) {
         //     print_hex8(entries[i].start_block);
         //     print_char('\n');
         // }
+        // u32 i_aux = i
+        // for (int j = 0; j < sectors_needed; j++) {
+        //     for (int k = i_aux; k < MAX_FILES; k++) {
+        //         if (entries[k].used == 0)
+        //             nr += 1
+        //     }
+        // }
+        // else {
+        //     nr2 += entries[i].byte_count;
+        // }
 
         if (entries[i].used == 0) {
-            // print_string("i: ");
-            // print_hex8((u8)i);
-            // print_char('\n');
+            sectors_needed -= 1;
+            print_string("i: ");
+            print_hex8((u8)i);
+            print_char('\n');
             // if (i > 0)
             //     free_space = entries[i - 1].start_block;
             // else
-            free_space = i;// entries[i].start_block;
+            // free_space = i;// entries[i].start_block;
 
-            break;
+            // break;
         }
         else {
-            nr2 += entries[i].byte_count;
+            sectors_needed = sectors_needed_aux;
+
         }
+
+        if (sectors_needed == 0) {
+            free_space = i - sectors_needed_aux + 1;
+            break;
+        }
+
+        nr2 += (entries[i].byte_count + 512) / 512;
+        // nr2 += entries[i].byte_count;
         nr += 1;
+
     }
 
     if (free_space == -1) {
         return 0;
     }
 
-    u32 start_block = sb.file_table_blocks + nr + 1 + (nr2 + BLOCK_SIZE) / 512;   // 1 + sb.file_table_blocks;
+    print_string("nr: ");
+    print_int(nr);
+    print_char('\n');
+
+    u32 start_block = sb.file_table_blocks + (nr2 - ((file_size + 512) / 512)) + 1;// + (nr2 + BLOCK_SIZE) / 512;   // 1 + sb.file_table_blocks;
     u32 num_blocks = (file_size + BLOCK_SIZE - 1) / BLOCK_SIZE;
 
-    // print_string("num_blocks: ");
-    // print_int(num_blocks);
-    // print_char('\n');
+    print_string("num_blocks: ");
+    print_int(num_blocks);
+    print_char('\n');
 
-    // print_string("start_block: ");
-    // print_hex8((u8)start_block);
-    // print_char('\n');
+    print_string("start_block: ");
+    print_hex8((u8)start_block);
+    print_char('\n');
 
-    // print_string("free_space: ");
-    // print_hex8((u8)free_space);
-    // print_char('\n');
+    print_string("free_space: ");
+    print_hex8((u8)free_space);
+    print_char('\n');
 
     // print_string("file_data: ");
     // print_string(file_data);
@@ -134,6 +161,8 @@ int write_file(u8 *file_name, u8 *file_data, u32 file_size) {
 
         // print_hex8(strlen(sector_buffer));
         // print_string(sector_buffer);
+        print_int(FS_START_SECTOR + start_block + i + 1);
+        print_char('\n');
         ata_pio_write28(FS_START_SECTOR + start_block + i + 1, 1, sector_buffer);
     }
     // ata_pio_write28(37, 1, file_data);
