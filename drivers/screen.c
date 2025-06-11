@@ -10,6 +10,7 @@ int get_offset_col(int offset);
 ///////////////////////////////////////////////////////////////////////////
 
 textStruct *text;
+u32 max_raw_col = 0;
 
 #define PALETTE_MASK  0x3C6
 #define PALETTE_WRITE 0x3C8
@@ -38,10 +39,15 @@ void screen_init() {
         .cursor_col = 0,
         .text_cols = TEXT_COLS,
         .text_rows = TEXT_ROWS,
-        .vga_buffer = (u8*)0xA0000,
+        .vga_buffer = (u8 *)0xA0000,
+        .text_buffer = (u8 *)0x100000,
         .fg_color = 0xFF,
         .bg_color = 0x00  
     };
+
+    memory_set((u8 *)text->vga_buffer, 0, SCREEN_WIDTH * SCREEN_HEIGHT);
+    max_raw_col = 0;
+    // memory_set(text->text_buffer, 0, 10000);
 }
 
 void put_pixel(int row, int col, u8 color_index) {
@@ -191,7 +197,7 @@ u8 font_bitmap[128][8] = {
     { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}    // U+007F 
 };
 
-void draw_char_at(char c) {
+void draw_char_at(char c, u8 color) {
     u8 char_row = text->raw_col / TEXT_COLS;
     u8 char_col = text->raw_col % TEXT_COLS;
 
@@ -200,7 +206,7 @@ void draw_char_at(char c) {
 
     u8 *glyph = font_bitmap[(u32) c];
 
-    u8 color = text->fg_color;
+    // u8 color = text->fg_color;
     for (u32 row = 0; row < 8; row++) {
         for (u32 col = 0; col < 8; col++) {
             if (glyph[row] & (1 << col)) {
@@ -210,7 +216,7 @@ void draw_char_at(char c) {
     }
 }
 
-void clear_char_at(u32 raw_col) {
+void clear_char_at(u32 raw_col, u8 color) {
     u8 char_row = raw_col / TEXT_COLS;
     u8 char_col = raw_col % TEXT_COLS;
 
@@ -219,30 +225,50 @@ void clear_char_at(u32 raw_col) {
 
     for (u32 row = 0; row < 8; row++) {
         for (u32 col = 0; col < 8; col++) {
-            put_pixel(pixel_col + row, pixel_row + col, text->bg_color);
+            put_pixel(pixel_col + row, pixel_row + col, color);
         }
     }
 }
 
+u8 get_char_at(u32 raw_col) {
+    return text->text_buffer[raw_col];
+}
+
 void print_char(char c) {
+    u8 color = text->fg_color;
+
     if (c == '\n') {
-        draw_char_at(' ');
-        text->raw_col += 1;
+        append(text->text_buffer, ' ');
+        draw_char_at(text->text_buffer[strlen(text->text_buffer) - 1], color);
+        text->raw_col = max_raw_col + 1;
+        max_raw_col += 1;
         while ((text->raw_col % TEXT_COLS) != 0) {
-            draw_char_at(' ');
+            append(text->text_buffer, ' ');
+            draw_char_at(text->text_buffer[strlen(text->text_buffer) - 1], color);
             text->raw_col += 1;
+            max_raw_col += 1;
         }
     }
-    else if (c == '\b') {
+    else if (c == '\b' && text->raw_col == max_raw_col) {
         if (text->raw_col > 0) {
             text->raw_col -= 1;
+            max_raw_col -= 1;
         }
         u32 raw_col = text->raw_col;
-        clear_char_at(raw_col);
+        clear_char_at(raw_col, text->bg_color);
+        text->text_buffer[text->raw_col] = '\0';
     }
-    else {
-        draw_char_at(c);
-        text->raw_col += 1;
+    else if (c != '\n' && c != '\b'){
+        // draw_char_at(c);
+        append(text->text_buffer, c);
+        text->text_buffer[text->raw_col] = c;
+        // clear_char_at(text->text_buffer[strlen(text->text_buffer) - 1], text->bg_color);
+        draw_char_at(text->text_buffer[strlen(text->text_buffer) - 1], color);
+
+        if (text->raw_col == max_raw_col) {
+            text->raw_col += 1;
+            max_raw_col += 1;
+        }
     }
 
     if (text->raw_col >= TEXT_COLS * TEXT_ROWS) {
@@ -259,6 +285,7 @@ void print_char(char c) {
         }
 
         text->raw_col -= TEXT_COLS;
+        max_raw_col -= TEXT_COLS;
     }
 }
 
@@ -280,9 +307,10 @@ void print_string(char *str) {
 void clear_screen() {
     u32 raw_col = 0; 
     while (raw_col < text->raw_col) {
-        clear_char_at(raw_col);
+        clear_char_at(raw_col, text->bg_color);
         raw_col += 1;
     }
 
     text->raw_col = 0;
+    max_raw_col = 0;
 }

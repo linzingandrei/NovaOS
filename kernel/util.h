@@ -16,5 +16,6 @@ char hex_digit(u8 value);
 void print_hex8(u8 value);
 void dump_sector_hex(u8 *buf, u16 cnt);
 void print_int(u32 value);
+void append(u8 *s, u8 val);
 
 #endif

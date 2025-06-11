@@ -28,7 +28,9 @@ static const s8 scancode_ascii[128] = {
     [0x0E] = '\b',
     [0x1C] = '\n',
     [0x39] = ' ',
+    [0x48] = 0, [0x4B] = 0, [0x4D] = 0, [0x50] = 0,
 };
+
 static const s8 shift_scancode_ascii[128] = {
     [0x02] = '!', [0x03] = '@', [0x04] = '#', [0x05] = '$',
     [0x06] = '%', [0x07] = '^', [0x08] = '&', [0x09] = '*',
@@ -68,7 +70,24 @@ s8 keyboard_get_char() {
         return 0;
     
     if (scancode < 128) {
-        char c = shift_pressed ? shift_scancode_ascii[scancode] : scancode_ascii[scancode];
+        char c;
+
+        int aux = text->raw_col - (SCREEN_WIDTH / 8);
+        if (scancode == 0x48 && aux > 0) {
+            text->raw_col -= SCREEN_WIDTH / 8;
+        }
+        else if (scancode == 0x4B && text->raw_col > 0) {
+            text->raw_col -= 1;
+        }
+        else if (scancode == 0x4D && text->raw_col + 1 <= max_raw_col) {
+            text->raw_col += 1;
+        }
+        else if (scancode == 0x50 && text->raw_col + 1 <= max_raw_col) {
+            text->raw_col += SCREEN_WIDTH / 8;
+        }
+        else 
+            c = shift_pressed ? shift_scancode_ascii[scancode] : scancode_ascii[scancode];
+
         return c;
     }
 

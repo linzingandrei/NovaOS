@@ -111,3 +111,9 @@ void dump_sector_hex(u8 *buf, u16 cnt) {
         }
     }
 }
+
+void append(u8 *s, u8 val) {
+    int n = strlen(s);
+    s[n] = val;
+    s[n + 1] = '\0';
+}

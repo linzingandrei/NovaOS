@@ -18,12 +18,12 @@ debug: os-image.bin kernel.elf
 	qemu-system-i386 -s -fda os-image.bin &
 	${GDB} -ex "target remote localhost:1234" -ex "symbol-file kernel.elf"
 
-os-image.iso: os-image.bin
-	xorriso -as mkisofs -o os-image.iso -b os-image.bin -no-emul-boot -boot-load-size 4 -boot-info-table os-image.bin
+os-image.vmdk: os-image.bin
+	qemu-img convert -f raw -O vmdk os-image.bin os-image.vmdk
 
 os-image.bin: boot/boot.bin kernel.bin
 	# cat $^ > os-image.bin
-	dd if=/dev/zero of=os-image.bin bs=512 count=1024 status=none
+	dd if=/dev/zero of=os-image.bin bs=1M count=10
 	dd if=boot/boot.bin of=os-image.bin bs=512 seek=0 conv=notrunc status=none
 	dd if=kernel.bin   of=os-image.bin bs=512 seek=1 conv=notrunc status=none
 

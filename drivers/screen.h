@@ -14,6 +14,7 @@
 #define TEXT_ROWS     (SCREEN_HEIGHT / FONT_HEIGHT)
 
 extern u8 font_bitmap[128][8];
+extern u32 max_raw_col;
 
 typedef struct {
     u32 cursor_row;
@@ -22,6 +23,7 @@ typedef struct {
     u32 text_rows;
     u32 raw_col;
     u8 *vga_buffer;
+    u8 *text_buffer;
     u8  fg_color;
     u8  bg_color;
 } textStruct;
@@ -31,11 +33,12 @@ extern textStruct *text;
 void screen_init();
 void put_pixel(int x, int y, u8 color_index);
 void screen_put();
+u8 get_char_at(u32 raw_col);
 void print_char(char c);
 void backspace();
 void print_string(char *str);
-void draw_char_at(char c);
-void clear_char_at(u32 raw_col);
+void draw_char_at(char c, u8 color);
+void clear_char_at(u32 raw_col, u8 color);
 void clear_screen();
 
 #endif
