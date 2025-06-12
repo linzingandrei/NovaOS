@@ -72,8 +72,9 @@ s8 keyboard_get_char() {
     if (scancode < 128) {
         char c;
 
-        int aux = text->raw_col - (SCREEN_WIDTH / 8);
-        if (scancode == 0x48 && aux > 0) {
+        int aux = (s32)text->raw_col / TEXT_COLS;
+        if (scancode == 0x48 && text->raw_col - SCREEN_WIDTH / 8 > 0) {
+            // draw_char_at('A', text->fg_color);
             text->raw_col -= SCREEN_WIDTH / 8;
         }
         else if (scancode == 0x4B && text->raw_col > 0) {
@@ -82,13 +83,12 @@ s8 keyboard_get_char() {
         else if (scancode == 0x4D && text->raw_col + 1 <= max_raw_col) {
             text->raw_col += 1;
         }
-        else if (scancode == 0x50 && text->raw_col + 1 <= max_raw_col) {
+        else if (scancode == 0x50 && text->raw_col + SCREEN_WIDTH / 8 <= max_raw_col) {
             text->raw_col += SCREEN_WIDTH / 8;
         }
         else 
             c = shift_pressed ? shift_scancode_ascii[scancode] : scancode_ascii[scancode];
-
-        return c;
+            return c;
     }
 
     return 0;
@@ -109,6 +109,9 @@ void keyboard_input(struct registers_t *regs) {
     }
 
     if (ch == '\n') {
+        // print_int(text->raw_col);
+        // print_char('\n');
+
         if (view == 1) {
             view_buffer[strlen(view_buffer)] = ch;
             view_buffer[strlen(view_buffer) + 1] = '\0';
@@ -122,7 +125,7 @@ void keyboard_input(struct registers_t *regs) {
             clear_screen();
             // print_string("DA");
         }
-        else if (strcmp(key_buffer, "view") == 0) {
+        else if (strncmp(key_buffer, "view", 4) == 0) {
             if (view != 1) {
                 raw_row = text->raw_col;
             }
@@ -131,12 +134,8 @@ void keyboard_input(struct registers_t *regs) {
             // print_int(where_view_mode_starts);
             // print_char('\n');
             memory_set(view_buffer, 0, 5000);
-        }
-        else if (strncmp(key_buffer, "save", 3) == 0 && view == 1) {
-            // print_string("DA");
-            // print_char('\n');
 
-            u8 rest_chars[27];
+            char rest_chars[27];
             memory_set(rest_chars, 0, strlen(rest_chars));
 
             for (int i = 4; i < strlen(key_buffer); i++) {
@@ -144,18 +143,67 @@ void keyboard_input(struct registers_t *regs) {
             }
             rest_chars[strlen(rest_chars)] = '\0';
 
-            // print_int(strlen(view_buffer));
-            // print_int(strlen(key_buffer));
+            if (strlen(rest_chars) > 0) {
+                u8 view_buffer_aux[5000] = {0};
+                memory_copy(view_buffer, view_buffer_aux, strlen(view_buffer) - strlen(key_buffer) - 2);
+                // memory_copy(view_buffer, view_buffer, strlen(view_buffer) - strlen(key_buffer));
+
+                read_file(rest_chars);
+
+                memory_set(view_buffer, 0, strlen(view_buffer));
+            }
+        }
+        else if (strncmp(key_buffer, "save", 4) == 0 && view == 1) {
+            // print_string("DA");
+            // print_char('\n');
+
+            u8 rest_chars[27];
+            memory_set(rest_chars, 0, strlen(rest_chars));
+
+            for (int i = 5; i < strlen(key_buffer); i++) {
+                rest_chars[i - 5] = key_buffer[i];
+            }
+            rest_chars[strlen(rest_chars)] = '\0';
+
+            if (strlen(rest_chars) > 0) {
+                // print_int(strlen(view_buffer));
+                // print_int(strlen(key_buffer));
+
+                u8 view_buffer_aux[5000] = {0};
+                memory_copy(view_buffer, view_buffer_aux, strlen(view_buffer) - strlen(key_buffer) - 2);
+                // memory_copy(view_buffer, view_buffer, strlen(view_buffer) - strlen(key_buffer));
+
+                write_file(rest_chars, view_buffer_aux, strlen(view_buffer_aux));
+
+                memory_set(view_buffer, 0, strlen(view_buffer));
+            }
+
+            // print_string(rest_chars);
+        }
+        else if (strncmp(key_buffer, "change", 6) == 0 && view == 1) {
+            // print_int(strlen("change"));
+            // print_char('\n');
+            u8 rest_chars[27];
+            memory_set(rest_chars, 0, strlen(rest_chars));
+
+            for (int i = 7; i < strlen(key_buffer); i++) {
+                rest_chars[i - 7] = key_buffer[i];
+            }
+            rest_chars[strlen(rest_chars)] = '\0';
 
             u8 view_buffer_aux[5000] = {0};
             memory_copy(view_buffer, view_buffer_aux, strlen(view_buffer) - strlen(key_buffer) - 2);
             // memory_copy(view_buffer, view_buffer, strlen(view_buffer) - strlen(key_buffer));
 
-            write_file(rest_chars, view_buffer_aux, strlen(view_buffer_aux));
+            // print_char('\n');
+            // print_string("View buffer:");
+            // print_string(view_buffer);
+            // print_char('\n');
+            // print_string(rest_chars);
+            // print_char('\n');
+            edit_file(rest_chars, view_buffer_aux, strlen(view_buffer_aux));
 
             memory_set(view_buffer, 0, strlen(view_buffer));
-
-            // print_string(rest_chars);
         }
         else if (strcmp(key_buffer, "exit") == 0) {
             view = 0;

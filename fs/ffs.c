@@ -115,7 +115,7 @@ int write_file(u8 *file_name, u8 *file_data, u32 file_size) {
     }
 
     if (free_space == -1) {
-        return 0;
+        return 1;
     }
 
     // print_string("nr: ");
@@ -123,7 +123,7 @@ int write_file(u8 *file_name, u8 *file_data, u32 file_size) {
     // print_char('\n');
 
     u32 start_block = sb.file_table_blocks + (nr2 - ((file_size + 512) / 512)) + 1;// + (nr2 + BLOCK_SIZE) / 512;   // 1 + sb.file_table_blocks;
-    u32 num_blocks = (file_size + BLOCK_SIZE - 1) / BLOCK_SIZE;
+    u32 number_sectors = (file_size + BLOCK_SIZE - 1) / BLOCK_SIZE;
 
     // print_string("num_blocks: ");
     // print_int(num_blocks);
@@ -145,7 +145,7 @@ int write_file(u8 *file_name, u8 *file_data, u32 file_size) {
     // print_int(file_size);
     // print_char('\n');
 
-    for (int i = 0; i < num_blocks; i++) {
+    for (int i = 0; i < number_sectors; i++) {
         // memory_set(sector_buffer, 0, BLOCK_SIZE);
         for (int j = 0; j < BLOCK_SIZE; j++) {
             u32 index = i * BLOCK_SIZE + j;
@@ -181,7 +181,7 @@ int write_file(u8 *file_name, u8 *file_data, u32 file_size) {
         ata_pio_write28(FS_START_SECTOR + i + 1, 1, &((u8 *)entries)[i * BLOCK_SIZE]);
     }
 
-    return 1;
+    return 0;
 }
 
 int read_file(u8 *file_name) {
@@ -246,11 +246,127 @@ int read_file(u8 *file_name) {
 int edit_file(u8 *file_name, u8 *file_data, u8 file_size) {
     struct file_entry_t entries[MAX_FILES];
     u8 sector_buffer[BLOCK_SIZE];
+    u8 buffer[5000] = {0};
 
     for (int i = 0; i < FILE_TABLE_BLOCKS; i++) {
         ata_pio_read28(FS_START_SECTOR + i + 1, 1, &((u8 *)entries)[i * BLOCK_SIZE]);
     }
 
+    u32 file_location = -1;
+    u32 start_block = 0;
+    u32 byte_count = 0;
+    for (int i = 0; i < MAX_FILES; i++) {
+        if (strcmp(entries[i].name, file_name) == 0 && entries[i].used == 1) {
+            start_block = entries[i].start_block;
+            byte_count = entries[i].byte_count;
+
+            file_location = i;
+
+            break;
+        }
+    }
+
+    if (file_location == -1) {
+        return 1;
+    }
+
+    u32 number_sectors = (byte_count + BLOCK_SIZE) / 512;
+    // print_int(number_sectors);
+    // print_hex8((u8)(FS_START_SECTOR + start_block_aux));
+    memory_set(sector_buffer, 0, sizeof(sector_buffer));
+    // ata_pio_read28(FS_START_SECTOR + start_block_aux + 0 + 1, 1, sector_buffer);
+    // print_string("sector buffer: ");
+    // print_string((u8 *)sector_buffer);
+    // print_int(strlen(sector_buffer));
+    // print_char('\n');
+
+    for (int i = 0; i < number_sectors; i++) {
+        ata_pio_read28(FS_START_SECTOR + start_block + i + 1, 1, sector_buffer);
+        // print_string("sector buffer: ");
+        // print_string(sector_buffer);
+        // print_char('\n');
+
+        for (int j = 0; j < strlen(sector_buffer); j++) {
+            // print_char(sector_buffer[j]);
+            append(buffer, sector_buffer[j]);
+        }
+
+        memory_set(sector_buffer, 0, sizeof(sector_buffer));
+    }
+
+    if (number_sectors * 512 - file_size >= 0) {
+        // print_string(buffer);
+        // print_string("File data: ");
+        // print_string(file_data);
+        // print_char('\n');
+        // print_string("File data size: ");
+        // print_int(strlen(file_data));
+        // print_char('\n');
+        int start = strlen(buffer);
+        for (int i = byte_count / 512; i < number_sectors; i++) {
+            // print_int(i);
+            // print_char('\n');
+            // int j;
+            // if (i == byte_count / 512) {
+            //     j = start + 1;
+            // }
+            for (int j = 0; j < BLOCK_SIZE; j++) {
+                u32 index = i * BLOCK_SIZE + j;
+
+                if (index < file_size) {
+                    // print_char(file_data[index]);
+                    // print_char('\n');
+                    sector_buffer[j] = file_data[index];
+                    // print_char(sector_buffer[j]);
+                    // print_char('\n');
+                }
+                else
+                    sector_buffer[j] = 0x00;
+            }
+
+            // print_string("AICI9: ");
+            // print_string(sector_buffer);
+            // print_char('\n');
+            if (i == byte_count / 512) {
+                // for (int l = 0; l < strlen(sector_buffer) / 2; l++) {
+                //     char aux = sector_buffer[l];
+                //     sector_buffer[l] = sector_buffer[strlen(buffer) - l];
+                //     sector_buffer[strlen(buffer) - l] = aux;
+                // }
+                for (int k = 0; k < strlen(sector_buffer); k++) {
+                    append(buffer, sector_buffer[k]);
+                }
+            }
+
+            memory_set(sector_buffer, 0, strlen(sector_buffer));
+            memory_copy(buffer, sector_buffer, strlen(buffer));
+
+            // print_string("AICI: ");
+            // print_string(sector_buffer);
+            // print_char('\n');
+            ata_pio_write28(FS_START_SECTOR + start_block + i + 1, 1, sector_buffer);
+        }
+
+        for (int i = 0; i < MAX_NAME_LENGTH; i++) {
+            entries[file_location].name[i] = file_name[i];
+            
+            if (file_name[i] == 0)
+                break;
+        }
+        entries[file_location].start_block = start_block;
+        entries[file_location].byte_count = byte_count + file_size + 1;
+        entries[file_location].used = 1;
+
+        for (int i = 0; i < FILE_TABLE_BLOCKS; i++) {
+            ata_pio_write28(FS_START_SECTOR + i + 1, 1, &((u8 *)entries)[i * BLOCK_SIZE]);
+        }
+    }
+    else {
+        remove_file(file_name);
+        write_file(file_name, buffer, file_size);
+    }
+
+    return 0;
 }
 
 int remove_file(u8 *file_name) {

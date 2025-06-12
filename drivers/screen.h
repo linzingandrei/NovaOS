@@ -14,14 +14,14 @@
 #define TEXT_ROWS     (SCREEN_HEIGHT / FONT_HEIGHT)
 
 extern u8 font_bitmap[128][8];
-extern u32 max_raw_col;
+extern s32 max_raw_col;
 
 typedef struct {
     u32 cursor_row;
     u32 cursor_col;
     u32 text_cols;
     u32 text_rows;
-    u32 raw_col;
+    s32 raw_col;
     u8 *vga_buffer;
     u8 *text_buffer;
     u8  fg_color;

@@ -10,7 +10,7 @@ int get_offset_col(int offset);
 ///////////////////////////////////////////////////////////////////////////
 
 textStruct *text;
-u32 max_raw_col = 0;
+s32 max_raw_col = 0;
 
 #define PALETTE_MASK  0x3C6
 #define PALETTE_WRITE 0x3C8
@@ -271,6 +271,24 @@ void print_char(char c) {
         }
     }
 
+    // s32 min_row_on_display = max_raw_col / TEXT_COLS - TEXT_ROWS;
+    // s32 row_currently_at = text->raw_col / TEXT_COLS;
+    // if (row_currently_at < 1 && max_raw_col > 41) {
+    //     memory_copy(
+    //         (char *)(text->vga_buffer),
+    //         (char *)(text->vga_buffer + SCREEN_WIDTH * 8),
+    //         SCREEN_WIDTH * (SCREEN_HEIGHT - 8)
+    //     );
+
+    //     for (int row = 0; row < 8; row++) {
+    //         for (int col = 0; col < SCREEN_WIDTH; col++) {
+    //             text->vga_buffer[row * SCREEN_WIDTH + col] = 0x00;
+    //         }
+    //     }
+
+    //     max_raw_col += TEXT_COLS;
+    //     text->raw_col += TEXT_COLS;
+    // }
     if (text->raw_col >= TEXT_COLS * TEXT_ROWS) {
         memory_copy(
             (char *)(text->vga_buffer + SCREEN_WIDTH * 8),
