@@ -197,7 +197,7 @@ void keyboard_input(struct registers_t *regs) {
 
             // print_char('\n');
             // print_string("View buffer:");
-            // print_string(view_buffer);
+            // print_string(view_buffer_aux);
             // print_char('\n');
             // print_string(rest_chars);
             // print_char('\n');

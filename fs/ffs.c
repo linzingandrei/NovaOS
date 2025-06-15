@@ -243,7 +243,7 @@ int read_file(u8 *file_name) {
     return 0;
 }
 
-int edit_file(u8 *file_name, u8 *file_data, u8 file_size) {
+int edit_file(u8 *file_name, u8 *file_data, u32 file_size) {
     struct file_entry_t entries[MAX_FILES];
     u8 sector_buffer[BLOCK_SIZE];
     u8 buffer[5000] = {0};
@@ -294,7 +294,16 @@ int edit_file(u8 *file_name, u8 *file_data, u8 file_size) {
         memory_set(sector_buffer, 0, sizeof(sector_buffer));
     }
 
-    if (number_sectors * 512 - file_size >= 0) {
+    // print_int(number_sectors);
+    // print_char('\n');
+    // print_int(file_size);
+    // print_char('\n');
+    // print_int(strlen(buffer));
+    // print_char('\n');
+    int condition_for_edit = number_sectors * 512 - (file_size + strlen(buffer));
+    // print_int(condition_for_edit);
+    // print_char('\n');
+    if (condition_for_edit >= 0) {
         // print_string(buffer);
         // print_string("File data: ");
         // print_string(file_data);
@@ -362,8 +371,18 @@ int edit_file(u8 *file_name, u8 *file_data, u8 file_size) {
         }
     }
     else {
+        print_string("DA");
+        print_char('\n');
+
         remove_file(file_name);
-        write_file(file_name, buffer, file_size);
+
+        for (int i = 0; i < strlen(file_data); i++) {
+            append(buffer, file_data[i]);
+        }
+
+        print_string(buffer);
+
+        write_file(file_name, buffer, strlen(buffer));
     }
 
     return 0;

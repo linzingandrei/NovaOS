@@ -32,7 +32,7 @@ void format(u32 total_blocks);
 void list_files(u8 *options);
 int write_file(u8 *file_name, u8 *file_data, u32 file_size);
 int read_file(u8 *file_name);
-int edit_file(u8 *file_name, u8 *file_data, u8 file_size);
+int edit_file(u8 *file_name, u8 *file_data, u32 file_size);
 int remove_file(u8 *file_name);
 
 #endif
